@@ -164,13 +164,35 @@ AAAAAAAAAAAAAAAA...AAAA   44 84 04 08
 0x08048444
 ```
 
-On x86, addresses are written in little endian, so `0x08048444` becomes:
+This is not shellcode. Shellcode would be machine instructions that we inject
+and execute. Here, the useful code already exists inside the binary in the
+hidden `run` function. The exploit only needs to overwrite the saved return
+address so execution returns to `run`.
+
+On this 32-bit x86 binary, addresses are stored in little endian. That means
+the least significant byte is written first.
+
+Split the address into bytes:
+
+```text
+0x08048444
+  08 04 84 44
+```
+
+Then reverse the order for little endian:
+
+```text
+44 84 04 08
+```
+
+So in the payload, the address is written as escaped bytes:
 
 ```text
 \x44\x84\x04\x08
 ```
 
-That is why the final payload starts with 76 bytes, then the address of `run`.
+That is why the final payload starts with 76 bytes, then the little-endian
+address of `run`.
 
 The terminal display is not a reliable way to count the `A` characters. For
 example, payloads 76 bytes look almost identical when printed:
